@@ -1,13 +1,18 @@
 <h4>{{appName}}</h4>
-<p>{{appDescription}}</p>
-<table class="full fixed">
-<thead>
-	<tr>
-	<th class="fourth">Név
-	<th class="half">Leírás
-	<tbody>
-		{{functions_html}}
-</table>
 
+<div class="indented">
+	{{appDescription}}
+
+	<% if (functions.length) { %>
+	<table class="full fixed functions-table">
+	<thead>
+		<tr>
+		<th class="third">Név
+		<th class="two-third">Leírás
+		<tbody>
+			{{functions_html}}
+	</table>
+<% } %>
+</div>
 
 

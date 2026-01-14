@@ -12,6 +12,9 @@
     "source.fixAll.eslint": "explicit"
   },
 
+  "css.validate": false,
+  "stylelint.enable": true,
+
   // (Optional) Do not auto-format on save if you want full manual control
   "editor.formatOnSave": false
 }

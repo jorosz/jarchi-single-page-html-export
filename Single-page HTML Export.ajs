@@ -39,17 +39,19 @@ _.templateSettings = {
   evaluate: /<%([\s\S]+?)%>/g
 };
 
+const File = Java.type('java.io.File');
+const cssFile = new File(__DIR__ + '/main.css');
+const cssAbsolutePath = 'file://' + cssFile.getAbsolutePath();
+
 // Set Markdown rendering options
 const renderer = new marked.Renderer();
-
-// Only override what you need
 renderer.heading = function (text, level) {
-  return '<p><strong>' + text + '</strong></p>\n';
+  return '<p>' + text + '</p>\n';
 };
 
 var mdOptions = {
   gfm: true,
-  breaks: true,
+  breaks: false,
   smartLists: true,
   smartypants: true,
   renderer: renderer
@@ -59,9 +61,12 @@ var roboto = readFully(__DIR__ + 'resources/roboto.css', 'UTF-8');
 var icon = readFully(__DIR__ + 'resources/icon.css', 'UTF-8');
 var picnic = readFully(__DIR__ + 'resources/picnic-custom.css', 'UTF-8');
 
+var allStyles = [roboto, icon, picnic].join('\n\n');
+var styleTag = '<style>\n' + allStyles + '\n</style>';
+
+
 var tplMainReport = _.template(readFully(__DIR__ + 'templates/main-report.html', 'UTF-8'));
-var tplVisibilityRuleBold = _.template(readFully(__DIR__ + 'templates/visibility-rule-bold.tpl', 'UTF-8'));
-var tplVisibilityRuleReveal = _.template(readFully(__DIR__ + 'templates/visibility-rule-reveal.tpl', 'UTF-8'));
+var tplVisibilityRules = _.template(readFully(__DIR__ + 'templates/visibility-rule.tpl', 'UTF-8'));
 var tplInputCheckbox = _.template(readFully(__DIR__ + 'templates/input-checkbox.tpl', 'UTF-8'));
 var tplTreeView = _.template(readFully(__DIR__ + 'templates/model-tree-view.tpl', 'UTF-8'));
 
@@ -71,8 +76,6 @@ var tplFunction = _.template(readFully(__DIR__ + 'templates/function.tpl', 'UTF-
 var tplFunctionApp = _.template(readFully(__DIR__ + 'templates/functionapp.tpl', 'UTF-8'));
 var tplRelationship = _.template(readFully(__DIR__ + 'templates/relationship.tpl', 'UTF-8'));
 
-var visibilityRulesBold = '';
-var visibilityRulesReveal = '';
 var inputCheckbox = '';
 var treeContent = '';
 var viewCollection = []; // this list will contain all the objects representing each view
@@ -123,33 +126,27 @@ function exportViews(folder) {
   _.chain($(folder).children('view'))
     .sortBy((v) => v.name)
     .each((v) => {
-      // Tree generation for view selection
-      treeContent += tplTreeView({
-        viewId: 'id-' + v.id,
-        viewName: _.escape(v.name)
-      });
-      visibilityRulesBold += tplVisibilityRuleBold({ viewId: 'id-' + v.id }); // TODO: maybe one day check if a wildcard can do?
-      visibilityRulesReveal += tplVisibilityRuleReveal({
-        viewId: 'id-' + v.id
-      });
-      inputCheckbox += tplInputCheckbox({
-        viewId: 'id-' + v.id,
-        checked: isFirst ? 'checked' : '' // first view is checked so that it's shown by default
-      });
-      isFirst = false;
-
       // this will store our data for the view
       let viewData = {
-        name: _.escape(v.name),
-        id: 'id-' + v.id,
+        viewId: 'id-' + v.id,
+        viewName: _.escape(v.name),
         diagram: $.model.renderViewAsBase64(v, 'PNG'),
-        documentation: marked(_.escape(v.documentation), mdOptions),
+        documentation: marked(v.documentation || '', mdOptions),
         functions: [], // will hold the list of functions (raw data)
         components: [], // will hold the data for each component
         apps_html: '', // stores rendered data for apps and functions
         flows: [],
-        flows_html: ''
+        flows_html: '',
+        checked: isFirst ? 'checked' : '', // triggers show/hide for checked       
       };
+
+      isFirst = false;
+
+      // tree and show-hide logic generation
+      inputCheckbox += tplInputCheckbox(viewData);
+      treeContent += tplTreeView(viewData);
+      styleTag += tplVisibilityRules(viewData);
+
 
       // Update lists of functional elements
       // need all application-functions so that we can put them into a map to be sorted by component
@@ -165,7 +162,7 @@ function exportViews(folder) {
             id: fun.id,
             applicationName: appComponent ? appComponent.name : 'N/A',
             applicationID: appComponent ? appComponent.id : 'default',
-            documentation: marked(_.escape(ec.documentation), mdOptions)
+            documentation: marked(ec.documentation || '', mdOptions)
           };
 
           viewData.functions.push(fObj);
@@ -183,7 +180,7 @@ function exportViews(folder) {
           console.log(app + ' ' + app.id + ' ' + appC.id);
           let aObj = {
             appName: app.name,
-            appDescription: marked(_.escape(app.documentation), mdOptions),
+            appDescription: marked(app.documentation || '', mdOptions),
             appID: appC.id,
 
             // next one filters functions for this application into functions
@@ -205,7 +202,7 @@ function exportViews(folder) {
             relationshipSource: _.escape(r.source.name),
             relationshipTarget: _.escape(r.target.name),
             relationshipDocumentationText: _.escape(r.documentation).replace(/\n/g, '<br>'),
-            relationshipDocumentationMarkdown: marked(_.escape(r.documentation), mdOptions)
+            relationshipDocumentationMarkdown: marked(r.documentation || '', mdOptions)
           };
           viewData.flows.push(fwObj);
         });
@@ -247,33 +244,20 @@ let views_html = _(viewCollection)
   })
   .join('');
 
+// render visibility rules
+
 let mainReport = tplMainReport({
   roboto: roboto,
   icon: icon,
   picnic: picnic,
   modelTitle: _.escape(model.name),
   modelPurposeText: _.escape(model.purpose).replace(/\n/g, '<br>'),
-  modelPurposeMarkdown: marked(_.escape(model.purpose), mdOptions),
-  visibilityRulesBold: visibilityRulesBold,
-  visibilityRulesReveal: visibilityRulesReveal,
+  modelPurposeMarkdown: marked(model.purpose || '', mdOptions),
+  styleTag: styleTag,
   inputCheckbox: inputCheckbox,
   treeContent: treeContent,
   views: views_html,
-  sidebarBgColor: '#37474f',
-  sidebarColor: '#DDDDDD',
-  sidebarWidth: '350px',
-  sidebarMargin: '10px',
-  sidebarFooterHeight: '0px',
-  headerHeight: '60px',
-  headerBgColor: '#0074D9',
-  headerColor: '#fff',
-  mainBgColor: '#fff',
-  mainColor: '#000',
-  mainMargin: '20px',
-  mainHeaderMargin: '35px',
-  mainHeaderBgColor: '#eceff1',
-  mainHeaderColor: '#546e7a',
-  treeMargin: '1.3em'
+  cssAbsolutePath: cssAbsolutePath,
 });
 
 $.fs.writeFile(filePath, mainReport, 'UTF-8');

@@ -37,20 +37,23 @@ their flows for each view.
 ### Other notable changes:
 
 - single page view (no tabs)
+- CSS handling logic sanitized, it's in a separate file so it can be linted
+- simplified (?) visibility rule creation
+- CSS variables replaced the parameters. it's 2026!
 - TODO: all tree and navigation with show/hide logic simplified to a single navigation using anchors
   to allow printing and export. also support for a single view should be added
 - the original script implements a hiding logic where each concept in a table row is listed once and
   the shown or hidden depending on view. my version produces the tables for each view, potentially
   duplicating the content. it results in a cleaner code in my opinion at the cost of a slightly
   bigger HTML result.
-- removed markdown trigger (it's on and that's it)
+- removed markdown checkbox (it's on and that's it. it's 2026, nothing markdown does that should not
+  be done in terms of documenting stuff)
+- marked is customized to ignore headers and render them as a bold paragraph 
 - all views from all sub folders get included. however, the tree view does not
   show folders, only the views are being listed, folders are being skipped. This
   is for user simplicity.
 - changed the logic of managing views: the tabs are gone and everything gets
   rendered on one page
-- From the relationships only Flow relationships are exported - we use these to
-  represent interfaces
 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
