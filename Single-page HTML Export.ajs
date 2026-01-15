@@ -42,6 +42,7 @@ _.templateSettings = {
 const File = Java.type('java.io.File');
 const cssFile = new File(__DIR__ + '/main.css');
 const cssAbsolutePath = 'file://' + cssFile.getAbsolutePath();
+const myCSS = readFully(__DIR__ + '/main.css', 'UTF-8');
 
 // Set Markdown rendering options
 const renderer = new marked.Renderer();
@@ -61,9 +62,8 @@ var roboto = readFully(__DIR__ + 'resources/roboto.css', 'UTF-8');
 var icon = readFully(__DIR__ + 'resources/icon.css', 'UTF-8');
 var picnic = readFully(__DIR__ + 'resources/picnic-custom.css', 'UTF-8');
 
-var allStyles = [roboto, icon, picnic].join('\n\n');
+var allStyles = [/*roboto,*/ icon, picnic, myCSS].join('\n\n'); // Roboto is removed to use system font
 var styleTag = '<style>\n' + allStyles + '\n</style>';
-
 
 var tplMainReport = _.template(readFully(__DIR__ + 'templates/main-report.html', 'UTF-8'));
 var tplVisibilityRules = _.template(readFully(__DIR__ + 'templates/visibility-rule.tpl', 'UTF-8'));
@@ -95,7 +95,7 @@ var yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 var filePath = window.promptSaveFile({
   title: 'Save as HTML file',
   filterExtensions: ['*.html', '*.*'],
-  fileName: model.name + yyyymmdd + '.html'
+  fileName: model.name +'-'+ yyyymmdd + '.html'
 });
 
 if (!filePath) {
@@ -137,7 +137,7 @@ function exportViews(folder) {
         apps_html: '', // stores rendered data for apps and functions
         flows: [],
         flows_html: '',
-        checked: isFirst ? 'checked' : '', // triggers show/hide for checked       
+        checked: isFirst ? 'checked' : '' // triggers show/hide for checked
       };
 
       isFirst = false;
@@ -146,7 +146,6 @@ function exportViews(folder) {
       inputCheckbox += tplInputCheckbox(viewData);
       treeContent += tplTreeView(viewData);
       styleTag += tplVisibilityRules(viewData);
-
 
       // Update lists of functional elements
       // need all application-functions so that we can put them into a map to be sorted by component
@@ -166,7 +165,7 @@ function exportViews(folder) {
           };
 
           viewData.functions.push(fObj);
-          console.log(fObj);
+          console.log(fun+" => "+fObj.applicationName+" "+fObj.applicationID);
         });
 
       // iterate application components and build the list
@@ -218,22 +217,34 @@ function exportViews(folder) {
 // loop views and populate data
 _(viewCollection).each((v) => {
   // map the flows
-  let flow_html = _.map(v.flows || [], (f) => {
-    return f.relationshipName ? tplRelationship(f) || '' : ''; // does not print flows with no name
-  }).join('\n');
+  let flow_html = _.chain(v.flows || [])
+    .sortBy(f => f.relationshipName)
+    .map((f) => {
+      return f.relationshipName ? tplRelationship(f) || '' : ''; // does not print flows with no name
+    })
+    .join('\n')
+    .value();
 
-  // map the apps
-  let app_html = _.map(v.components || [], (app) => {
-    // inside the app we map the function
-    app.functions_html = _.map(app.functions || [], (fun) => {
-      return tplFunction(fun) || '';
-    }).join('');
+  // map the apps and functions
+  let app_html = _.chain(v.components || [])
+    .sortBy(a => a.appName)
+    .map((app) => {
 
-    return tplFunctionApp(app) || '';
-  }).join('');
+      // inside the app we map the function
+      app.functions_html = _.chain(app.functions || [])
+        .sortBy(f => f.name)
+        .map((fun) => {
+          return tplFunction(fun) || '';
+        })
+        .join('')
+        .value();
+
+      return tplFunctionApp(app) || '';
+    })
+    .join('')
+    .value();
 
   v.flows_html = flow_html;
-
   v.apps_html = app_html;
 });
 
@@ -257,7 +268,7 @@ let mainReport = tplMainReport({
   inputCheckbox: inputCheckbox,
   treeContent: treeContent,
   views: views_html,
-  cssAbsolutePath: cssAbsolutePath,
+  cssAbsolutePath: cssAbsolutePath
 });
 
 $.fs.writeFile(filePath, mainReport, 'UTF-8');
