@@ -297,7 +297,9 @@ article header * {
   margin-block-end: 0.5em;
   margin-block-start: 0.5em;
 }
-.views img {
+
+.views img,
+.views svg {
   max-width: 100%;
   margin-top: var(--main-margin); /* only set top margin because bottom is set by tabs */
 }

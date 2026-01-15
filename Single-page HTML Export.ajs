@@ -126,11 +126,14 @@ function exportViews(folder) {
   _.chain($(folder).children('view'))
     .sortBy((v) => v.name)
     .each((v) => {
+      const svgString = $.model.renderViewAsSVGString(v, {embedFonts: false});
+
       // this will store our data for the view
       let viewData = {
         viewId: v.id,
         viewName: _.escape(v.name),
-        diagram: $.model.renderViewAsBase64(v, 'PNG'),
+        diagram: $.model.renderViewAsBase64(v, 'SVG'),
+        svg: svgString, // tried SVG but not better
         documentation: marked(v.documentation || '', mdOptions),
         functions: [], // will hold the list of functions (raw data)
         components: [], // will hold the data for each component
