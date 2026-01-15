@@ -128,7 +128,7 @@ function exportViews(folder) {
     .each((v) => {
       // this will store our data for the view
       let viewData = {
-        viewId: 'id-' + v.id,
+        viewId: v.id,
         viewName: _.escape(v.name),
         diagram: $.model.renderViewAsBase64(v, 'PNG'),
         documentation: marked(v.documentation || '', mdOptions),

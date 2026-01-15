@@ -1,10 +1,13 @@
 <h4>{{appName}}</h4>
 
-<div class="indented">
-	{{appDescription}}
 
-	<% if (functions.length) { %>
-	<table class="full fixed functions-table">
+<% if (appDescription) { %>
+	<div class="indented">{{appDescription}}</div>
+<% } %>
+
+
+<% if (functions.length) { %>
+	<table class="full fixed functions-table indented">
 	<thead>
 		<tr>
 		<th class="third">Név
@@ -13,6 +16,5 @@
 			{{functions_html}}
 	</table>
 <% } %>
-</div>
 
 

@@ -1,4 +1,4 @@
-<article class="views hidden {{viewId}}">
+<article class="views" id="view-{{viewId}}">
   <h2>{{viewName}}</h2>
   <header>
     {{documentation}}
@@ -9,8 +9,7 @@
   {{apps_html}}
 
   <h3>Interfészek</h2>
-  <div class="indented">
-  <table class="full fixed">
+  <table class="full fixed indented">
     <thead>
       <tr>
         <th class="sixth">Név</th>
@@ -24,5 +23,4 @@
       {{flows_html}}
     </tbody>
   </table>
-  </div>
 </article>
